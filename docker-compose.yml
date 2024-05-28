@@ -15,6 +15,7 @@ services:
       - odoo-network
 
   odoo16:
+    hostname: oo16-ee
     image: jobiols/odoo-ent:16.0
     user: root
     depends_on:
@@ -26,13 +27,30 @@ services:
     command: --
     environment:
       - HOST=db
+      - PORT=5432
       - USER=odoo
       - PASSWORD=odoo16@2022
     volumes:
+      - oo16-ee-web-data:/var/lib/odoo
+      - oo16-ee-config:/etc/odoo
+      - oo16-ee-addons:/mnt/extra-addons
+      - oo16-ee-usrlocallib:/usr/local/lib
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
       # - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
-      - ./addons:/mnt/extra-addons
-      - ./etc:/etc/odoo
-    restart: always             # run as a service
-    
+      # - ./addons:/mnt/extra-addons
+      # - ./etc:/etc/odoo
+    networks:
+      - odoo-network
+    # restart: always             # run as a service
+
+volumes:
+  - pg15-db-data:
+  - oo16-ee-web-data:
+  - oo16-ee-config:
+  - oo16-ee-addons:
+  - oo16-ee-usrlocallib:
+
+networks:
+  odoo-network:
+    external: true
