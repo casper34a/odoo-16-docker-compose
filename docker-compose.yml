@@ -1,18 +1,21 @@
 version: '3.3'
 services:
   db:
+    hostname: pg15
     image: postgres:15
     user: root
     environment:
       - POSTGRES_USER=odoo
-      - POSTGRES_PASSWORD=odoo16@2022      
+      - POSTGRES_PASSWORD=odoo16@2024
       - POSTGRES_DB=postgres
-    restart: always             # run as a service
+    # restart: always             # run as a service
     volumes:
-        - ./postgresql:/var/lib/postgresql/data
+      - pg15-db-data:/var/lib/postgresql/data
+    networks:
+      - odoo-network
 
   odoo16:
-    image: odoo:16
+    image: jobiols/odoo-ent:16.0
     user: root
     depends_on:
       - db
