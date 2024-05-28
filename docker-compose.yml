@@ -1,16 +1,15 @@
 services:
   db:
-    hostname: pg15
+    # hostname: pg15
     image: postgres:15
     user: root
     environment:
       - POSTGRES_USER=odoo
       - POSTGRES_PASSWORD=odoo16@2024
       - POSTGRES_DB=postgres
-      - PGDATA=/var/lib/postgresql/data/pgdata
     # restart: always             # run as a service
     volumes:
-      - pg15-db-data:/var/lib/postgresql/data
+      - ./pgdata:/var/lib/postgresql/data
     networks:
       - odoo-network
 
@@ -31,29 +30,16 @@ services:
       - USER=odoo
       - PASSWORD=odoo16@2024
     volumes:
-      - oo16-ee-web-data:/var/lib/odoo
-      - oo16-ee-config:/etc/odoo
-      - oo16-ee-addons:/mnt/extra-addons
-      - oo16-ee-usrlocallib:/usr/local/lib
       #- /etc/timezone:/etc/timezone:ro
       #- /etc/localtime:/etc/localtime:ro
-      # - ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
-      # - ./addons:/mnt/extra-addons
-      # - ./etc:/etc/odoo
+      #- ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
+       - ./addons:/opt/odoo/custom-addons
+       - ./etc:/opt/odoo/etc
     networks:
       - odoo-network
     # restart: always             # run as a service
-
-volumes:
-  pg15-db-data:
-  oo16-ee-web-data:
-  oo16-ee-config:
-  oo16-ee-addons:
-  oo16-ee-usrlocallib:
-
 networks:
   odoo-network:
     driver: bridge
     driver_opts:
       com.docker.network.driver.mtu: 1450
-
