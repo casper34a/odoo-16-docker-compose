@@ -16,7 +16,7 @@ services:
 
   odoo16:
     hostname: oo16-ee
-    image: jobiols/odoo-ent:16.0
+    image: 36aa63f72273
     user: root
     depends_on:
       - db
@@ -29,7 +29,7 @@ services:
       - HOST=db
       - PORT=5432
       - USER=odoo
-      - PASSWORD=odoo16@2022
+      - PASSWORD=odoo16@2024
     volumes:
       - oo16-ee-web-data:/var/lib/odoo
       - oo16-ee-config:/etc/odoo
@@ -53,4 +53,7 @@ volumes:
 
 networks:
   odoo-network:
-    external: true
+    driver: bridge
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
+
