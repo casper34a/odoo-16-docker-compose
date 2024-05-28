@@ -46,11 +46,11 @@ services:
     # restart: always             # run as a service
 
 volumes:
-  - pg15-db-data:
-  - oo16-ee-web-data:
-  - oo16-ee-config:
-  - oo16-ee-addons:
-  - oo16-ee-usrlocallib:
+  pg15-db-data:
+  oo16-ee-web-data:
+  oo16-ee-config:
+  oo16-ee-addons:
+  oo16-ee-usrlocallib:
 
 networks:
   odoo-network:
