@@ -1,5 +1,5 @@
-pgdata/
-etc/odoo-server.log
+postgresql/
+logs/odoo-server.log
 etc/addons/
 etc/sessions/
 etc/filestore/

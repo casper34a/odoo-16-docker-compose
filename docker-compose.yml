@@ -9,13 +9,13 @@ services:
       - POSTGRES_DB=postgres
     # restart: always             # run as a service
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
+      - ./postgresql:/var/lib/postgresql/data
     networks:
       - odoo-network
 
   odoo16:
     hostname: oo16-ee
-    image: 36aa63f72273
+    image: jobiols/odoo-ent:16.0e
     user: root
     depends_on:
       - db
@@ -35,6 +35,7 @@ services:
       #- ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
        - ./addons:/opt/odoo/custom-addons
        - ./etc:/opt/odoo/etc
+       - ./etc/odoo-server.log:/var/log/odoo/odoo-server.log
     networks:
       - odoo-network
     # restart: always             # run as a service
