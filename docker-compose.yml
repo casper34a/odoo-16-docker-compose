@@ -1,6 +1,6 @@
 services:
   db:
-    # hostname: pg15
+    hostname: pg15
     image: postgres:15
     user: root
     environment:
@@ -13,6 +13,21 @@ services:
     networks:
       - odoo-network
 
+  pgadmin4:
+    hostname: pgadmin4
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=johann.rodriguez@center-source.com
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin4@2024
+    depends_on:
+      - db
+    ports:
+      - 15432:80
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    networks:
+      - odoo-network
+
   odoo16:
     hostname: oo16-ee
     image: jobiols/odoo-ent:16.0e
@@ -20,8 +35,8 @@ services:
     depends_on:
       - db
     ports:
-      - "10016:8069"
-      - "20016:8072" # live chat
+      - 10016:8069
+      - 20016:8072 # live chat
     tty: true
     command: --
     environment:
@@ -34,8 +49,11 @@ services:
       #- /etc/localtime:/etc/localtime:ro
       #- ./entrypoint.sh:/entrypoint.sh   # if you want to install additional Python packages, uncomment this line!
        - ./addons:/opt/odoo/custom-addons
+       - ./extra-addons:/mnt/extra-addons
        - ./etc:/opt/odoo/etc
+       - ./data:/opt/odoo/data
        - ./etc/odoo-server.log:/var/log/odoo/odoo-server.log
+       #- ./odoo-src:/usr/lib/python3/dist-packages/odoo/addons
     networks:
       - odoo-network
     # restart: always             # run as a service
