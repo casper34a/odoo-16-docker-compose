@@ -1,0 +1,55 @@
+version: '3.3'
+services:
+  oo13m:
+    hostname: oo13m
+    image: jobiols/odoo-jeo:13.0
+    ports:
+      - 8088:8069
+    environment:
+      - HOST=pg
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo
+    volumes:
+      - oo13m-webdata:/opt/odoo/data
+      - oo13m-config:/opt/odoo/etc/
+      - oo13m-addons:/opt/odoo/custom-addons
+#      - oo13m-usrlocallib:/usr/local/lib
+    networks:
+      - odoo-network
+#      - traefik-public
+    deploy:
+      replicas: 1
+  oo13s:
+    hostname: oo13s
+    image: jobiols/odoo-jeo:13.0.slave
+    environment:
+      - HOST=pg
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo
+    volumes:
+      - oo13s-webdata:/opt/odoo/data
+      - oo13s-config:/opt/odoo/etc/
+      - oo13s-addons:/opt/odoo/custom-addons
+#      - oo13s-usrlocallib:/usr/local/lib
+    networks:
+      - odoo-network
+#      - traefik-public
+    deploy:
+      replicas: 8
+
+volumes:
+  oo13m-webdata:
+  oo13m-config:
+  oo13m-addons:
+#  oo13m-usrlocallib:
+  oo13s-webdata:
+  oo13s-config:
+  oo13s-addons:
+#  oo13s-usrlocallib:
+networks:
+  odoo-network:
+    external: true
+#  traefik-public:
+#    external: true

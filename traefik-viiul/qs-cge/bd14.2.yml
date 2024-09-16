@@ -1,0 +1,46 @@
+version: '3.3'
+services:
+  pg:
+    hostname: pg-cge
+    image: postgres:14.2-alpine
+    environment:
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+      - shm-size='1g'
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - pg142-db-data:/var/lib/postgresql/data
+    networks:
+      - postgres-network
+      - odoo-network
+    deploy:
+      mode: replicated
+      replicas: 1
+#      placement:
+#        constraints:
+#        - node.labels.db == pgprimary
+#        - node.labels.speed == ooboost
+
+  pgadmin:
+    hostname: pgadmin
+    image: dpage/pgadmin4
+    ports:
+      - 8055:80
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=johann.rodriguez@quilsoft.com
+      - PGADMIN_DEFAULT_PASSWORD=quilsoft.com
+    volumes:
+      - pgadmin-data:/pgadmin/
+    networks:
+      - postgres-network
+    deploy:
+      mode: replicated
+      replicas: 1
+volumes:
+  pg142-db-data:
+  pgadmin-data:
+networks:
+  odoo-network:
+    external: true
+  postgres-network:
+    external: true

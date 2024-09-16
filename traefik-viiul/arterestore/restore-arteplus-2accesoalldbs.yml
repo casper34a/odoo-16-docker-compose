@@ -1,0 +1,32 @@
+version: '3.3'
+services:
+  arteplus-restore-dev:
+    hostname: arteplus-dev
+    image: odoo:10
+    ports:
+      - 8069:8069
+    deploy:
+      replicas: 1
+    environment:
+      - ODOO_ADMINPASS=QkMifyjiSr
+      - HOST=primary
+      - PORT=5432
+      - USER=artelive
+      - PASSWORD=Art3l1v32021Pa55w0rd
+      - ODOO_RC=/etc/odoo/odoo.conf
+    volumes:
+      - oo10-arteplus-dev-web-data2:/var/lib/odoo
+      - oo10-arteplus-dev-config2:/etc/odoo
+      - oo10-arteplus-dev-addons2:/mnt/extra-addons
+      - oo10-arteplus-dev-usrlocallib2:/usr/local/lib
+    networks:
+      - odoo_odoo_net
+volumes:
+  oo10-arteplus-dev-web-data2:
+  oo10-arteplus-dev-config2:
+  oo10-arteplus-dev-addons2:
+  oo10-arteplus-dev-usrlocallib2:
+
+networks:
+  odoo_odoo_net:
+    external: true

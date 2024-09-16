@@ -1,0 +1,51 @@
+version: '3.3'
+services:
+  arteplus-plus:
+    hostname: arteplus-plus
+    image: odoo:10
+    deploy:
+      replicas: 1
+    environment:
+      - HOST=primary
+      - PORT=5432
+      - USER=arteplus
+      - PASSWORD=Art3Plus2021Pa55w0rd
+    volumes:
+      - oo10-arteplus-dev-web-data:/var/lib/odoo
+      - oo10-arteplus-dev-config:/etc/odoo
+      - oo10-arteplus-dev-addons:/mnt/extra-addons
+      - oo10-arteplus-dev-usrlocallib:/usr/local/lib
+    networks:
+      - odoo_odoo_net
+
+  arteplus-restore-dev:
+    hostname: arteplus-dev
+    image: odoo:10
+    deploy:
+      replicas: 1
+    environment:
+      - HOST=primary
+      - PORT=5432
+      - USER=artelive
+      - PASSWORD=Art3l1v32021Pa55w0rd
+    volumes:
+      - oo10-arteplus-dev-web-data2:/var/lib/odoo
+      - oo10-arteplus-dev-config2:/etc/odoo
+      - oo10-arteplus-dev-addons2:/mnt/extra-addons
+      - oo10-arteplus-dev-usrlocallib2:/usr/local/lib
+    networks:
+      - odoo_odoo_net
+
+volumes:
+  oo10-arteplus-dev-web-data:
+  oo10-arteplus-dev-config:
+  oo10-arteplus-dev-addons:
+  oo10-arteplus-dev-usrlocallib:
+  oo10-arteplus-dev-web-data2:
+  oo10-arteplus-dev-config2:
+  oo10-arteplus-dev-addons2:
+  oo10-arteplus-dev-usrlocallib2:
+
+networks:
+  odoo_odoo_net:
+    external: true

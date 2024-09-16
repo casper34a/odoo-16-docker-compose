@@ -1,0 +1,152 @@
+version: '3.3'
+services:
+
+  oo10_boost_test_1:
+    hostname: oo10BoosTest1
+    image: odoo:10
+    environment:
+      - HOST=pg-master
+      - PORT=5432
+      - USER=primaryuser
+      - PASSWORD=password
+    volumes:
+      - oo10-boost-test-1-web-data:/var/lib/odoo
+      - oo10-boost-test-1-config:/etc/odoo
+      - oo10-boost-test-1-addons:/mnt/extra-addons
+      - oo10-boost-test-1-usrlocallib:/usr/local/lib
+    networks:
+      - odoo-network
+      - traefik-public
+    deploy:
+      placement:
+        constraints:
+        - node.labels.speed == ooboost
+        - node.labels.db != pgprimary
+      mode: replicated
+      replicas: 1
+      labels:
+        # Enable Traefik for this service, to make it available in the public network
+        - traefik.enable=true
+        # Use the traefik-public network (declared below)
+        - traefik.docker.network=traefik-public
+        # Use the custom label "traefik.constraint-label=traefik-public"
+        # This public Traefik will only use services with this label
+        # That way you can add other internal Traefik instances per stack if needed
+        - traefik.constraint-label=traefik-public
+        # https-redirect middleware to redirect HTTP to HTTPS
+        # It can be re-used by other stacks in other Docker Compose files
+        - traefik.http.middlewares.oo10BoosTest1-https-redirect.redirectscheme.scheme=https
+        - traefik.http.middlewares.oo10BoosTest1-https-redirect.redirectscheme.permanent=true
+        # traefik-http set up only to use the middleware to redirect to https
+        # Uses the environment variable DOMAIN
+        - traefik.http.routers.oo10BoosTest1-public-http.rule=Host(`artetest.viiul.fi`,`artenewlive.viiul.fi`)
+        - traefik.http.routers.oo10BoosTest1-public-http.entrypoints=http
+        - traefik.http.routers.oo10BoosTest1-public-http.middlewares=oo10BoosTest1-https-redirect
+        # traefik-https the actual router using HTTPS
+        # Uses the environment variable DOMAIN
+        - traefik.http.routers.oo10BoosTest1-public-https.rule=Host(`artetest.viiul.fi`,`artenewlive.viiul.fi`)
+        - traefik.http.routers.oo10BoosTest1-public-https.entrypoints=https
+        - traefik.http.routers.oo10BoosTest1-public-https.tls=true
+        # Use the special oo10SaaSlive1 service
+        - traefik.http.routers.oo10BoosTest1-public-https.service=oo10BoosTest1
+        # Use the "le" (Let's Encrypt) resolver created below
+        - traefik.http.routers.oo10BoosTest1-public-https.tls.certresolver=le
+        # Enable HTTP Basic auth, using the middleware created above
+        # Define the port inside of the Docker service to use
+        - traefik.http.services.oo10BoosTest1.loadbalancer.server.port=8069
+  pg-master:
+    hostname: pg-master
+    image: crunchydata/crunchy-postgres:centos8-13.3-4.7.0
+    environment:
+      - PGHOST=/tmp
+      - MAX_CONNECTIONS=250
+      - MAX_WAL_SENDERS=5
+      - PG_MODE=primary
+      - PG_PRIMARY_USER=primaryuser
+      - PG_PRIMARY_PASSWORD=password
+      - PG_DATABASE=testdb
+      - PG_USER=artetest
+      - PG_PASSWORD=artetest
+      - PG_ROOT_PASSWORD=password
+      - PG_PRIMARY_PORT=5432
+    volumes:
+    - pg-master-vol:/pgdata
+    - pg-master-backrestrepo:/backrestrepo
+    - pg-master-pgwal:/pgwal
+    - pg-master-backup:/backup
+    - pg-master-recover:/recover
+    - pg-master-pgconf:/pgconf
+    - pg-master-sshd:/sshd
+    networks:
+    - postgres-network
+    - odoo-network
+    deploy:
+      placement:
+        constraints:
+        - node.labels.db == pgprimary
+        - node.labels.speed == ooboost
+      mode: replicated
+      replicas: 1
+  pg-slave:
+    hostname: pg-slave
+    image: crunchydata/crunchy-postgres:centos8-13.3-4.7.0
+    environment:
+    - PGHOST=/tmp
+    - MAX_CONNECTIONS=15
+    - MAX_WAL_SENDERS=5
+    - PG_MODE=replica
+    - PG_PRIMARY_HOST=pg-master
+    - PG_PRIMARY_PORT=5432
+    - PG_PRIMARY_USER=primaryuser
+    - PG_PRIMARY_PASSWORD=password
+    - PG_DATABASE=testdb
+    - PG_USER=artetest
+    - PG_PASSWORD=artetest
+    - PG_ROOT_PASSWORD=password
+    volumes:
+    - pg-slave-vol:/pgdata
+    - pg-slave-backrestrepo:/backrestrepo
+    - pg-slave-pgwal:/pgwal
+    - pg-slave-backup:/backup
+    - pg-slave-recover:/recover
+    - pg-slave-pgconf:/pgconf
+    - pg-slave-sshd:/sshd
+    ports:
+      - "30001:5432"
+    networks:
+      - postgres-network
+      - traefik-public
+    deploy:
+      placement:
+        constraints:
+        - node.labels.db == pgsecondary
+      mode: replicated
+      replicas: 1
+
+volumes:
+  oo10-boost-test-1-web-data:
+  oo10-boost-test-1-config:
+  oo10-boost-test-1-addons:
+  oo10-boost-test-1-usrlocallib:
+  pg-master-vol:
+  pg-master-backrestrepo:
+  pg-master-pgwal:
+  pg-master-backup:
+  pg-master-recover:
+  pg-master-pgconf:
+  pg-master-sshd:
+  pg-slave-vol:
+  pg-slave-backrestrepo:
+  pg-slave-pgwal:
+  pg-slave-backup:
+  pg-slave-recover:
+  pg-slave-pgconf:
+  pg-slave-sshd:
+
+networks:
+  odoo-network:
+    external: true
+  postgres-network:
+    external: true
+  traefik-public:
+    external: true

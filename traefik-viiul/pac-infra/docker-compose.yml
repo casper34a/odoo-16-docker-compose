@@ -1,0 +1,128 @@
+version: '3.3'
+
+services:
+  proxy:
+    image: traefik:v2.2
+    ports:
+      - 80:80
+      - 443:443
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.middlewares.admin-auth.basicauth.users=admin:$$apr1$$Fiy9SqZJ$$si9YvQEdzS9jbZZ1ty9Zr.
+      - traefik.http.middlewares.https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.traefik-public-http.rule=Host(`proxy.pacotilleros.com`)
+      - traefik.http.routers.traefik-public-http.entrypoints=http
+      - traefik.http.routers.traefik-public-http.middlewares=https-redirect
+      - traefik.http.routers.traefik-public-https.rule=Host(`proxy.pacotilleros.com`)
+      - traefik.http.routers.traefik-public-https.entrypoints=https
+      - traefik.http.routers.traefik-public-https.tls=true
+      - traefik.http.routers.traefik-public-https.service=api@internal
+      - traefik.http.routers.traefik-public-https.tls.certresolver=le
+      - traefik.http.routers.traefik-public-https.middlewares=admin-auth
+      - traefik.http.services.traefik-public.loadbalancer.server.port=8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-public-certificates:/certificates
+    command:
+      - --providers.docker
+      - --providers.docker.constraints=Label(`traefik.constraint-label`, `traefik-public`)
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.http.address=:80
+      - --entrypoints.https.address=:443
+      - --certificatesresolvers.le.acme.email=admin@teipi.net
+      - --certificatesresolvers.le.acme.storage=/certificates/acme.json
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --accesslog
+      - --log
+      - --api
+    networks:
+      - traefik-public
+
+  dbms_pg9:
+    hostname: pg9
+    image: postgres:9.5
+    environment:
+      - POSTGRES_PASSWORD=odoo
+      - POSTGRES_USER=odoo
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - pg9-db-data:/var/lib/postgresql/data
+    networks:
+      - postgres-network
+
+  pgadmin:
+    hostname: pgadmin
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@teipi.net
+      - PGADMIN_DEFAULT_PASSWORD=pG@dM1nA4p@C*
+    volumes:
+      - pgadmin-data:/pgadmin/
+    networks:
+      - postgres-network
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.middlewares.pgadmin-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.pgadmin-https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.pgadmin-public-http.rule=Host(`pgadmin.pacotilleros.com`)
+      - traefik.http.routers.pgadmin-public-http.entrypoints=http
+      - traefik.http.routers.pgadmin-public-http.middlewares=pgadmin-https-redirect
+      - traefik.http.routers.pgadmin-public-https.rule=Host(`pgadmin.pacotilleros.com`)
+      - traefik.http.routers.pgadmin-public-https.entrypoints=https
+      - traefik.http.routers.pgadmin-public-https.tls=true
+      - traefik.http.routers.pgadmin-public-https.service=pgadmin
+      - traefik.http.routers.pgadmin-public-https.tls.certresolver=le
+      - traefik.http.services.pgadmin.loadbalancer.server.port=80
+
+  oo10_pac_live:
+    hostname: oo10PAClive
+    image: odoo:10
+    environment:
+      - HOST=dbms_pg9
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo
+    volumes:
+      - oo10-pac-live-web-data:/var/lib/odoo
+      - oo10-pac-live-config:/etc/odoo
+      - oo10-pac-live-addons:/mnt/extra-addons
+      - oo10-pac-live-usrlocallib:/usr/local/lib
+    networks:
+      - traefik-public
+      - postgres-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      - traefik.constraint-label=traefik-public
+      - traefik.http.middlewares.oo10pacLive-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.oo10pacLive-https-redirect.redirectscheme.permanent=true
+      - traefik.http.routers.oo10pacLive-public-http.rule=Host(`pacotilleros.com`)
+      - traefik.http.routers.oo10pacLive-public-http.entrypoints=http
+      - traefik.http.routers.oo10pacLive-public-http.middlewares=oo10pacLive-https-redirect
+      - traefik.http.routers.oo10pacLive-public-https.rule=Host(`pacotilleros.com`)
+      - traefik.http.routers.oo10pacLive-public-https.entrypoints=https
+      - traefik.http.routers.oo10pacLive-public-https.tls=true
+      - traefik.http.routers.oo10pacLive-public-https.service=oo10pacLive
+      - traefik.http.routers.oo10pacLive-public-https.tls.certresolver=le
+      - traefik.http.services.oo10pacLive.loadbalancer.server.port=8069
+
+volumes:
+  traefik-public-certificates:
+  pg9-db-data:
+  oo10-pac-live-web-data:
+  oo10-pac-live-config:
+  oo10-pac-live-addons:
+  oo10-pac-live-usrlocallib:
+  pgadmin-data:
+
+networks:
+  traefik-public:
+    external: true
+  postgres-network:
+    external: true

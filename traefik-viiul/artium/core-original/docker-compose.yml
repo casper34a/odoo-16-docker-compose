@@ -1,0 +1,175 @@
+version: "3"
+
+services:
+
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-data/traefik.yml:/traefik.yml:ro
+      - ./traefik-data/acme.json:/acme.json
+      - ./traefik-data/configurations:/configurations
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`artiumtraefik.pilveserv.eu`)"
+      - "traefik.http.routers.traefik-secure.middlewares=user-auth@file"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - proxy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./portainer-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.portainer-secure.entrypoints=websecure"
+      - "traefik.http.routers.portainer-secure.rule=Host(`artium2portainer.pilveserv.eu`)"
+      - "traefik.http.routers.portainer-secure.service=portainer"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+
+  mssql2019:
+    hostname: mssql2019
+    container_name: mssql2019
+    restart: always
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=KeeruL1nepar00l
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Standard
+      - MSSQL_AGENT_ENABLED=true
+      - MSSQL_TCP_PORT=8888
+      - MSSQL_COLLATION=Estonian_CI_AS
+    ports:
+      - '8888:8888'
+    volumes:
+      - sqldata:/var/opt/mssql
+      - sqlbackup:/var/opt/mssql/koopia
+    deploy:
+      replicas: 1
+
+  dotnet:
+    hostname: dotnet
+    container_name: dotnet
+    restart: always
+    image: mcr.microsoft.com/dotnet/aspnet:5.0
+    environment:
+# asp.net core app-i saab seadistada sajal erineval viisil. konteineris deploymentil on mõistlikum kasutada keskkonnamuutujaid, siis ei pea 
+# tegelema appsettings failidega ja saab jooksvalt asju muuta 
+#
+# vaikimisi käivitub asp.net core pordis 5001
+      - ASPNETCORE_URLS=http://+:8880
+# keskkonna nimi peaks alati määratud olema asp.net core puhul, sest see võimaldab äpis rakendada .net core platvormi tuge
+# erinevate käitumisreziimideks
+      - ASPNETCORE_ENVIRONMENT=Development
+# defineerime baasi ühenduse samuti keskkonnamuutujas, sest siis saab see olla kooskõlas samas compse failis nimetatud 
+# sql serveri konfiga - vt. Server - viitab siinsamas määratud serverile
+      - ASPNETCORE_ConnectionStrings__TerminalContext=Server=tcp:mssql2019,8888;Initial Catalog=artium_pda_test;Persist Security Info=False;User ID=pda_ws_test;Password=skh2K3j.2jasHhr43kf-fJrH;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;
+# ei oma hetkel tähtsust, kuna entrypointis on antud täistee     
+      - WORKDIR=/
+# vt. https://github.com/compose-spec/compose-spec/blob/master/spec.md command ja entrypoint kirjeldust
+# command ei ole eraldi vajalik, sest compose spetsi järgi, kui entrypoint on määratud, siis see kirjutab
+# üle ka commandi. St. entrypointi esimene element ongi command
+# Googles antud viited ENV abil entrypointi määramisel ei tööta eelnevalt kompileeritud asp.net core
+# rakenduse puhul, sest tegemist ei ole Dockeri imagega. 
+    entrypoint: 
+      - dotnet
+      - app/VTMF.Terminal.WS.dll
+    ports:
+      - '8880:8880'
+    volumes:
+      - dotnetapp:/app
+    deploy:
+      replicas: 1
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.dotnet-secure.entrypoints=websecure
+      - traefik.http.routers.dotnet-secure.rule=Host(`artiumdotnet.pilveserv.eu`)
+      - traefik.http.routers.dotnet-secure.service=dotnet
+      - traefik.http.services.dotnet.loadbalancer.server.port=8880
+
+
+  livemssql2019:
+    hostname: livemssql2019
+    container_name: livemssql2019
+    restart: always
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=KeeruL1nepar00l
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Standard
+      - MSSQL_AGENT_ENABLED=true
+      - MSSQL_TCP_PORT=9999
+      - MSSQL_COLLATION=Estonian_CI_AS
+    ports:
+      - '9999:9999'
+    volumes:
+      - livesqldata:/var/opt/mssql
+      - livesqlbackup:/var/opt/mssql/koopia
+    deploy:
+      replicas: 1
+
+
+  livedotnet:
+    hostname: livedotnet
+    container_name: livedotnet
+    restart: always
+    image: mcr.microsoft.com/dotnet/aspnet:5.0
+    environment:
+      - ASPNETCORE_URLS=http://+:9990
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ConnectionStrings__TerminalContext=Server=tcp:mssql2019,9999;Initial Catalog=artium_pda_test;Persist Security Info=False;User ID=pda_ws_test;Password=skh2K3j.2jasHhr43kf-fJrH;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;
+      - WORKDIR=/
+    entrypoint: 
+      - dotnet
+      - app/VTMF.Terminal.WS.dll
+    ports:
+      - '9990:9990'
+    volumes:
+      - livedotnetapp:/app
+    deploy:
+      replicas: 1
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.livedotnet-secure.entrypoints=websecure
+      - traefik.http.routers.livedotnet-secure.rule=Host(`aladu.pilveserv.eu`)
+      - traefik.http.routers.livedotnet-secure.service=dotnet
+      - traefik.http.services.livedotnet.loadbalancer.server.port=9990
+
+
+volumes:
+  sqldata:
+  sqlbackup:
+  dotnetapp:
+  livesqldata:
+  livesqlbackup:
+  livedotnetapp:
+
+
+networks:
+  proxy:
+    external: true
+
+

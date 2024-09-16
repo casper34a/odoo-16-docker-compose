@@ -1,0 +1,29 @@
+version: '3.3'
+
+services:
+
+  pgadmin:
+    hostname: pgadmin
+    image: thajeztah/pgadmin4:latest
+    restart: always
+#    network_mode: bridge
+    networks:
+      - proxy
+    ports:
+      - 5050
+    volumes:
+      - pgadmin-data:/pgadmin/
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.pgadmin-secure.entrypoints=websecure
+      - traefik.http.routers.pgadmin-secure.rule=Host(`artiumdev.pilveserv.eu`)
+      - traefik.http.routers.pgadmin-secure.service=pgadmin
+      - traefik.http.services.pgadmin.loadbalancer.server.port=5050
+
+volumes:
+  pgadmin-data:
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,28 @@
+version: '3.3'
+services:
+  sql3:
+    hostname: sql3
+    restart: always
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - MSSQL_SA_PASSWORD=KeeruL1nepar00l
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Standard
+      - MSSQL_AGENT_ENABLED=true
+      - MSSQL_COLLATION=Estonian_CI_AS
+    ports:
+      - '8033:1433'
+    volumes:
+      - sqldata:/var/opt/mssql
+      #- sqlbackup:/var/opt/mssql/koopia
+    networks:
+      - mmsqlnet
+      - proxy-ext
+volumes:
+  sqldata:
+  #sqlbackup:
+networks:
+  mmsqlnet-in:
+    external: true
+  proxy-ext:
+    external: true
