@@ -1,0 +1,50 @@
+services:
+  pg14:
+    hostname: pg14
+    image: postgres:14-alpine
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres14_data:/var/lib/postgresql/data
+
+  oo16:
+    hostname: oo16
+    image: ziverun/odoo:16.0
+    restart: always
+    ports:
+      - "8069:8069"
+    environment:
+      - HOST=pg14
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=postgres
+    volumes:
+      - oo16-opt:/opt/odoo
+      - ../etc:/opt/odoo/etc
+      - ../etc/odoo-server.log:/var/log/odoo/odoo-server.log
+
+  pgadmin:
+    hostname: pgadmin
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.co
+      - PGADMIN_DEFAULT_PASSWORD=postgres
+    volumes:
+      - pgadmin-data:/pgadmin/
+volumes:
+  pgadmin-data:
+  postgres14_data:
+  oo16-opt:
