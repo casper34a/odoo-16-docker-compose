@@ -35,7 +35,7 @@ services:
 
   pgadmin:
     hostname: pgadmin
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:latest
     restart: always
     ports:
       - "8888:80"
