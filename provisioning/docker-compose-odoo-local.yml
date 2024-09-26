@@ -17,6 +17,26 @@ services:
     volumes:
       - postgres14_data:/var/lib/postgresql/data
 
+  pg:
+    hostname: pg16
+    image: postgres:16-alpine
+    restart: always
+    ports:
+      - "5433:5432"
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres16_data:/var/lib/postgresql/data
+
   oo16:
     hostname: oo16
     image: ziverun/odoo:16.0
@@ -30,6 +50,22 @@ services:
       - PASSWORD=postgres
     volumes:
       - oo16-opt:/opt/odoo
+      - ../etc:/opt/odoo/etc
+      - ../etc/odoo-server.log:/var/log/odoo/odoo-server.log
+
+  oo17:
+    hostname: oo17
+    image: ziverun/odoo:17.0
+    restart: always
+    ports:
+      - "8070:8069"
+    environment:
+      - HOST=pg16
+      - PORT=5433
+      - USER=odoo
+      - PASSWORD=postgres
+    volumes:
+      - oo17-opt:/opt/odoo
       - ../etc:/opt/odoo/etc
       - ../etc/odoo-server.log:/var/log/odoo/odoo-server.log
 
@@ -47,4 +83,6 @@ services:
 volumes:
   pgadmin-data:
   postgres14_data:
+  postgres16_data:
   oo16-opt:
+  oo17-opt:
