@@ -12,30 +12,27 @@ services:
     #    tmpfs:
     #      size: 134217728 # 128*2^20 bytes = 128Mb
     environment:
-      - POSTGRES_USER=odoo
+      - POSGRES_USER=odoo
       - POSTGRES_PASSWORD=postgres
     volumes:
       - postgres14_data:/var/lib/postgresql/data
 
-  pg16:
-    hostname: pg16
-    image: postgres:16-alpine
-    restart: always
-    ports:
-      - "5433:5432"
-    # set shared memory limit when using docker-compose
-    shm_size: 128mb
-    # or set shared memory limit when deploy via swarm stack
-    #volumes:
-    #  - type: tmpfs
-    #    target: /dev/shm
-    #    tmpfs:
-    #      size: 134217728 # 128*2^20 bytes = 128Mb
-    environment:
-      - POSTGRES_USER=odoo
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres16_data:/var/lib/postgresql/data
+#  pg16:
+#    hostname: pg16
+#    image: postgres:16-alpine
+#    restart: always
+#    # set shared memory limit when using docker-compose
+#    shm_size: 128mb
+#    # or set shared memory limit when deploy via swarm stack
+#    #volumes:
+#    #  - type: tmpfs
+#    #    target: /dev/shm
+#    #    tmpfs:
+#    #      size: 134217728 # 128*2^20 bytes = 128Mb
+#    environment:
+#      - POSTGRES_PASSWORD=postgres
+#    volumes:
+#      - postgres16_data:/var/lib/postgresql/data
 
   oo16:
     hostname: oo16
@@ -60,8 +57,8 @@ services:
     ports:
       - "8070:8069"
     environment:
-      - HOST=pg16
-      - PORT=5433
+      - HOST=pg14
+      - PORT=5432
       - USER=odoo
       - PASSWORD=postgres
     volumes:
@@ -83,6 +80,6 @@ services:
 volumes:
   pgadmin-data:
   postgres14_data:
-  postgres16_data:
+#  postgres16_data:
   oo16-opt:
   oo17-opt:
