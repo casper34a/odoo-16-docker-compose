@@ -17,7 +17,7 @@ services:
     volumes:
       - postgres14_data:/var/lib/postgresql/data
 
-  pg:
+  pg16:
     hostname: pg16
     image: postgres:16-alpine
     restart: always
@@ -66,8 +66,8 @@ services:
       - PASSWORD=postgres
     volumes:
       - oo17-opt:/opt/odoo
-      - ../etc:/opt/odoo/etc
-      - ../etc/odoo-server.log:/var/log/odoo/odoo-server.log
+      - ../etc-aux:/opt/odoo/etc
+      - ../etc-aux/odoo-server.log:/var/log/odoo/odoo-server.log
 
   pgadmin:
     hostname: pgadmin
